@@ -61,7 +61,7 @@ def strasrec(X, Y):
 	lth = len(X)
 	# If we're at or below the cutoff, switch to the conventional method
 	if lth <= cutoff:
-		return conventional(X, Y)
+		return conventional(X, Y) #commentttttt
 	else:
 		#print "recurse"
 		# Tee up the four submatrices, wrapped up as x's and y's (xs,ys). Dividing dimension by 2 each time.
