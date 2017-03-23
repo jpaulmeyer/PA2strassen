@@ -4,19 +4,22 @@ from math import log,ceil
 from random import choice,seed
 from time import time
 from sys import argv
-cutoff = 1 # Cutoff of when to switch to strassen
+import cProfile
+
+cutoff = 4 # Cutoff of when to switch to strassen
 seed(99999) # Seeding random number generator
-size = 100 # How large of positive or negative numbers should be allowed in the array
+size = 1 # How large of positive or negative numbers should be allowed in the array
 print "Cutoff", cutoff, '\n'
 usagestring = "Usage: ./strassen flag dimension inputfile | any extras into list"
 modestring = "Mode not included, use 0, 1, 2 for read, generate, hard"
-modes_by_index = ['read', 'generate', 'hard']
+modes_by_index = ['read', 'generate', 'hard', 'verbose', 'testing']
 
 #Flags: sets mode argument
 #### 0: read (from inputfile) ***normal for graders)
 #### 1: generate (makes matrices from seed)
 #### 2: hard input (not implemented yet)
 #### 3: verbose (prints a lot, submode of generate)
+#### 4: testing things
 
 def generate(dim, size):
 	options = range(size+1)
@@ -28,7 +31,7 @@ sub = lambda x, y : [[x[i][j] - y[i][j] for j in xrange(len(x))] for i in xrange
 empty = lambda size: [[0 for _ in xrange(size)] for _ in xrange(size)]
 diags = lambda z : [z[i][i] for i in xrange(len(z))]
 
-def conventional(X, Y):
+def conventional1(X, Y):
 	lth = len(X)
 	Z = empty(lth)
 	for ii in xrange(lth):
@@ -37,11 +40,20 @@ def conventional(X, Y):
 				Z[ii][jj] += X[ii][kk] * Y[kk][jj]
 	return Z
 
+def conventional2(X, Y): # Apparently switching the two kk and jj loops makes it a bit faster
+	lth = len(X)
+	Z = empty(lth)
+	for ii in xrange(lth):
+		for kk in xrange(lth):
+			for jj in xrange(lth):
+				Z[ii][jj] += X[ii][kk] * Y[kk][jj]
+	return Z
+
 def strasrec(X, Y):
 	lth = len(X)
-	# If we're at or below the cutoff, switch to the conventional method
+	# If we're at or below the cutoff, switch to the conventional2 method
 	if lth <= cutoff:
-		return conventional(X, Y) #commentttttt
+		return conventional2(X, Y) #commentttttt
 	else:
 		#print "recurse"
 		# Tee up the four submatrices, wrapped up as x's and y's (xs,ys). Dividing dimension by 2 each time.
@@ -62,8 +74,6 @@ def strasrec(X, Y):
 				ys[1][i][j] = Y[i][j + siz]
 				ys[2][i][j] = Y[i + siz][j]
 				ys[3][i][j] = Y[i + siz][j + siz]
-		#print 'xs', xs 
-		#print 'ys', ys
 
 		# Do all multiplications
 		m1 = strasrec(add(xs[0], xs[3]), add(ys[0], ys[3]))
@@ -73,21 +83,25 @@ def strasrec(X, Y):
 		m5 = strasrec(add(xs[0], xs[1]), ys[3])
 		m6 = strasrec(sub(xs[2], xs[0]), add(ys[0], ys[1]))
 		m7 = strasrec(sub(xs[1], xs[3]), add(ys[2], ys[3]))
+		
 		ms = [m1,m2,m3,m4,m5,m6,m7]
 
 
-		# Calculate Final results
-		zs = [add(sub(add(m1, m4), m5), m7), add(m3, m5), add(m2, m4), add(add(sub(m1, m2), m3), m6)]
+		# Calculate Final results (top left, top right, bot left, bot right)
+		zs = [ add(sub(add(m1, m4), m5), m7),     add(m3, m5), \
+		\
+			   add(m2, m4),        add(add(sub(m1, m2), m3), m6) ]
 
 		# Unite all four matrices
 		Z = empty(lth)
 		for i in xrange(siz):
 			for j in xrange(siz):
-				Z[i][j] = zs[0][i][j]
-				Z[i][j + siz] = zs[1][i][j]
-				Z[i + siz][j] = zs[2][i][j]
-				Z[i + siz][j + siz] = zs[3][i][j]
-		#print Z
+				Z[i][j] = zs[0][i][j] # Top left
+				Z[i][j + siz] = zs[1][i][j] # Top right
+				Z[i + siz][j] = zs[2][i][j] # Bot left
+				Z[i + siz][j + siz] = zs[3][i][j] # Bot right
+
+		# Return the completed matrix
 		return Z
 
 def strassen(X, Y):
@@ -140,9 +154,42 @@ def verify(X, Y, Z): # Make sure X * Y = Z via numpy (only used for checking pur
 	print "Total errors: ", ct
 	return mydiags == gooddiags
 
+def do_tests(dim, times):
+	import numpy
+	adds1, subs1, adds2, subs2 = [],[],[],[]
+	for _ in xrange(times):
+		aa = generate(dim, size)
+		bb = generate(dim, size)
+		start = time()
+		D = conventional1(aa,bb)
+		mid = time()
+		# E = add(aa,bb)
+		# end = time()
+		start2 = time()
+		F = conventional2(aa,bb)
+		mid2 = time()
+		# G = sub(aa,bb)
+		# end2 = time()
+		adds1.append(mid-start)
+		# adds2.append(end-mid)
+		adds2.append(mid2-start2)
+		# subs2.append(end2-mid2)
+	avg1 = sum(adds1)#/len(adds1)
+	avg2 = sum(adds2)#/len(adds2)
+	# avg3 = sum(subs1)#/len(subs1)
+	# avg4 = sum(subs2)#/len(subs2)
+	print "On avg..."
+	print "Conventional1 took: " + str(avg1) + ' sec'
+	print "Conventional2 took: " + str(avg2) + ' sec' 
+	# print "My sub took: " + str(avg3) + ' sec'
+	# print "Numpy sub took: " + str(avg4) + ' sec' 
+
+
+
+
 def main(mode, dim, inputfile=None, checking=False):
 	X, Y = [], []
-
+	print mode
 	# Act based on mode given through argv
 	if mode not in modes_by_index:
 		print modestring
@@ -152,6 +199,12 @@ def main(mode, dim, inputfile=None, checking=False):
 	elif mode == 'generate':
 		X = generate(dim,size)
 		Y = generate(dim,size)
+	elif mode == 'verbose':
+		pass
+	elif mode == 'testing':
+		do_tests(35, 50)
+		return
+
 	### In all cases, take in X and Y (list of lists)...
 	start = time()
 	Z = strassen(X, Y)	# Strassen multiply them, converting to conventional whenever you want
@@ -161,7 +214,7 @@ def main(mode, dim, inputfile=None, checking=False):
 		print diags(Z)
 
 	start2 = time()
-	C = conventional(X, Y)
+	C = conventional2(X, Y)
 	end2 = time()
 	convtime = end2-start2
 	print "Conventional took: " + str(end2-start2) + ' sec' # Report timing of my Strassen implementation
