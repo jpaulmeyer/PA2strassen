@@ -1,0 +1,90 @@
+\documentclass[11pt]{article}
+% \pagestyle{empty}
+
+\setlength{\oddsidemargin}{-0.25 in}
+\setlength{\evensidemargin}{-0.25 in}
+\setlength{\topmargin}{-0.9 in}
+\setlength{\textwidth}{7.0 in}
+\setlength{\textheight}{9.0 in}
+\setlength{\headsep}{0.75 in}
+\setlength{\parindent}{0.3 in}
+\setlength{\parskip}{0.1 in}
+\usepackage{epsf}
+\usepackage{pseudocode}
+\usepackage{listings}
+\usepackage{graphicx}
+% \usepackage{times}
+% \usepackage{mathptm}
+
+\def\O{\mathop{\smash{O}}\nolimits}
+\def\o{\mathop{\smash{o}}\nolimits}
+\newcommand{\e}{{\rm e}}
+\newcommand{\R}{{\bf R}}
+\newcommand{\Z}{{\bf Z}}
+
+\begin{document}
+
+\textbf{Harvard ID 40939695 CS 124 Programming Assignment 2}
+
+\begin{enumerate}
+    \item \textbf{THEORY: ANALYTICAL ANALYSIS}
+
+    \begin{enumerate}
+    
+        \begin{enumerate}
+            \item First, let's look at Strassen analytically
+            \begin{itemize}
+                \item First, we divide the matrix into four pieces, thus cutting our n, the dimension term, in half, leaving an n/2 inside the T of our recursive call.
+                \item Additionally, we're doing 7 recursive strass-multiply calls per recursion, leaving a 7 multiplied by the T(n/2) from the prev step
+                \item Finally, the tailing term of the recurrence relation will have a factor of  18 total operations, since our multiplications each either take one or two adds/subs, and there's 7 of them total (i.e. 3 two ops and 4 one ops). From this we tack an 18 onto the end of our relation. Matrix addition and subtraction are O($n^2$) time, so we tack on a $+ 18n^2$ to our relation
+                \item This leaves us with a recurrence relation of $T(n) = 7T(n/2) + 18n^2$. We know what this solves to via the master thm and class in terms of a runtime, but as a function of n, we have to solve the recurrence relation as follows:
+                $$ T(n) = 7T(n/2)+18n^2 $$
+                $$ T(n) = 7*7*...*T(n/(2*2*...))+(18+18+...)n^2 $$
+                $$ T(n) = 7^k*T(n/(2^k))+18kn^2 $$
+                \item Since $g(1) = 1$, then if $n/2^k = 1$, $n = log_2(n)$. We plug this in for k and get that...
+                $$ T(n) = 7^{log_2(n)}1+18n^2log_2(n) $$
+            \end{itemize}
+            \item Next, we evaluate the conventional method, seeing how many operations would be required.
+            \begin{itemize}
+                \item \textbf{TODO} For conventional, 
+            \end{itemize}
+            \item From this we can see that the equations for Strassen and the Conventional method are as follows:
+            \begin{itemize}
+                \item \textbf{TODO}
+                \item Strass: $ T(n) = 7^{log_2(n)}1+18n^2log_2(n) $
+                \item Conv:
+            \end{itemize}
+        \end{enumerate}
+        \item Analytically determine the value of $n_0$ for a crude estimate of a cutoff.
+        \begin{enumerate}
+            \item \textbf{FILL IN} The two equations equal each other at **** n0=1 and n0= whatever*******. This means that with a cutoff of n0=whatever****, we can make our modified Strassen faster by switching to the conventional method at the next power of two ABOVE that cutoff. Since our cutoff is n=whatever****, we switch at *****, the nearest power of two above our cutoff point.
+        \end{enumerate}
+    \end{enumerate}
+    \item \textbf{CODE: EXPERIMENTAL ANALYSIS}
+    
+    \begin{enumerate}
+        \item I implemented both Strassens and the Conventional method, and although my code is a bit slower in Python than other languages allow for, a lot of testing time led me to see that the best cutoff value of n0, or the variable cutoff in my code, is \textbf{32} for dimensions of 1024 and higher. I've screenshotted tests of this that you're welcome to replicate, but they will take around 15 minutes to fully run at dimensions of 2048, or longer if dimension is further increased.
+        \item In order to make the Conventional method more optimized, I used a number of Pythonic tools to make my 
+        \begin{itemize}
+            \item \textbf{TODO}
+        \end{itemize}
+        \item Your implementation should work for any size matrices, not just those whose dimensions are a power of 2.
+        \begin{itemize}
+            \item \textbf{TODO}
+        \end{itemize}
+        \item To test your algorithm, you might try matrices where each entry is randomly selected to be 0 or 1; similarly, you might try matrices where each entry is randomly selected to be 0, 1 or 2, or instead 0, 1, or −1. We will test on integer matrices, possibly of this form. (You may assume integer inputs.) You need not try all of these, but do test your algorithm adequately.
+        \begin{itemize}
+            \item \textbf{TODO}
+        \end{itemize}
+        
+    \end{enumerate}
+
+\item \textbf{DISCUSSION}
+
+\begin{enumerate}
+    \item 
+\end{enumerate}
+
+\end{enumerate}
+
+\end{document}

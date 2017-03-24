@@ -1,18 +1,25 @@
 #!/usr/bin/python
-import csv
-from math import log,ceil
-from random import choice,seed
-from time import time
-from sys import argv
+
+# Harvard ID 40939695
+# Quick intro: Hi! I've completed the programming assignment, and while it's a bit slow in real-time speed,
+# the modified Strassen algorithm *********
+
+
+
+import csv # For file IO
+from math import log,ceil # Log and ceil for determining padding etc.
+from random import choice,seed # Seed for consistent results (testing) and use choice for random nums
+from time import time # For timing how long things take
+from sys import argv # For command line args
 import cProfile
 
-cutoff = 4 # Cutoff of when to switch to strassen
-seed(99999) # Seeding random number generator
+cutoff = 16 # Cutoff of when to switch to strassen
+seed(99999) # Seeding random number generator for consistency
 size = 1 # How large of positive or negative numbers should be allowed in the array
 print "Cutoff", cutoff, '\n'
 usagestring = "Usage: ./strassen flag dimension inputfile | any extras into list"
 modestring = "Mode not included, use 0, 1, 2 for read, generate, hard"
-modes_by_index = ['read', 'generate', 'hard', 'verbose', 'testing']
+modes_by_index = ['read', 'generate', 'hard', 'verbose', 'testing'] #Graders will be using the read mode
 
 #Flags: sets mode argument
 #### 0: read (from inputfile) ***normal for graders)
@@ -40,7 +47,7 @@ def conventional1(X, Y):
 				Z[ii][jj] += X[ii][kk] * Y[kk][jj]
 	return Z
 
-def conventional2(X, Y): # Apparently switching the two kk and jj loops makes it a bit faster
+def conventional2(X, Y): # Switching the two kk and jj loops makes it a bit faster
 	lth = len(X)
 	Z = empty(lth)
 	for ii in xrange(lth):
@@ -53,9 +60,8 @@ def strasrec(X, Y):
 	lth = len(X)
 	# If we're at or below the cutoff, switch to the conventional2 method
 	if lth <= cutoff:
-		return conventional2(X, Y) #commentttttt
+		return conventional2(X, Y)
 	else:
-		#print "recurse"
 		# Tee up the four submatrices, wrapped up as x's and y's (xs,ys). Dividing dimension by 2 each time.
 		siz = lth/2
 		xs = [empty(siz) for _ in xrange(4)]
@@ -104,20 +110,30 @@ def strasrec(X, Y):
 		# Return the completed matrix
 		return Z
 
-def strassen(X, Y):
-	n = len(X)
-	m = 2**int(ceil(log(n,2)))
-	XPrep = empty(m)
-	YPrep = empty(m)
-	for i in xrange(n):
-		for j in xrange(n):
-			XPrep[i][j] = X[i][j]
-			YPrep[i][j] = Y[i][j]
-	ZPrep = strasrec(XPrep, YPrep)
-	Z = [[0 for i in xrange(n)] for j in xrange(n)]
-	for i in xrange(n):
-		for j in xrange(n):
-			Z[i][j] = ZPrep[i][j]
+def pad(X, Y, lth):
+	powertwo = 2**int(ceil(log(lth,2)))
+	padX, padY = empty(powertwo), empty(powertwo)
+	for i in xrange(lth):
+		for j in xrange(lth):
+			padX[i][j] = X[i][j]
+			padY[i][j] = Y[i][j]
+	return padX, padY
+
+def unpad(padZ, lth):
+	Z = empty(lth)
+	for i in xrange(lth):
+		for j in xrange(lth):
+			Z[i][j] = padZ[i][j]
+	return Z
+
+def strassen(X, Y): # Pad, multiply, unpad (won't pad if perfect power of two)
+	# Pad X and Y with zeros up to next power of two, regardless of if odd or even
+	lth = len(X)
+	padX, padY = pad(X, Y, lth)
+	# Multiply the padded matrices
+	padZ = strasrec(padX, padY)
+	# Unpad resulting padded matrix padZ
+	Z = unpad(padZ, lth)
 	return Z
 	
 def readmatrix(filename): #CLEAN
@@ -161,7 +177,7 @@ def do_tests(dim, times):
 		aa = generate(dim, size)
 		bb = generate(dim, size)
 		start = time()
-		D = conventional1(aa,bb)
+		D = strassen(aa,bb)
 		mid = time()
 		# E = add(aa,bb)
 		# end = time()
@@ -183,9 +199,6 @@ def do_tests(dim, times):
 	print "Conventional2 took: " + str(avg2) + ' sec' 
 	# print "My sub took: " + str(avg3) + ' sec'
 	# print "Numpy sub took: " + str(avg4) + ' sec' 
-
-
-
 
 def main(mode, dim, inputfile=None, checking=False):
 	X, Y = [], []
@@ -243,9 +256,5 @@ if __name__ == "__main__":
 	elif arg_len >= 5:
 		extras = argv[4:]
 		print usagestring + "\n" + "You used extra arguments {}".format(extras)
-
-		
-
-
 
 
